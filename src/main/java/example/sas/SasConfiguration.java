@@ -58,10 +58,19 @@ public class SasConfiguration {
     @Bean OAuth2AuthorizationConsentService consents(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients) {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
     }
-    @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http, PolicyValidator validator) throws Exception {
+    @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http, PolicyValidator validator, Policies policies,
+        RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations) throws Exception {
         var sas = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(sas.getEndpointsMatcher())
-            .with(sas, config -> config.authorizationEndpoint(endpoint -> endpoint.authenticationProviders(providers ->
+            .with(sas, config -> config.registeredClientRepository(effectiveClients)
+                .clientAuthentication(client -> client.authenticationConverter(PkceCompatibility.publicOffConverter(policies))
+                    .authenticationProvider(PkceCompatibility.publicOffProvider(policies, effectiveClients, authorizations)))
+                .authorizationEndpoint(endpoint -> endpoint
+                    .authorizationRequestConverters(converters -> {
+                        converters.removeIf(c -> c instanceof org.springframework.security.oauth2.server.authorization.web.authentication.OAuth2AuthorizationCodeRequestAuthenticationConverter);
+                        converters.add(0, PkceCompatibility.authorizationConverter(policies));
+                    })
+                    .authenticationProviders(providers ->
                 providers.forEach(provider -> {
                     if (provider instanceof org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationProvider p)
                         p.setAuthenticationValidator(validator);
