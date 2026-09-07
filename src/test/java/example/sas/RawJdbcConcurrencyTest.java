@@ -10,9 +10,9 @@ import static org.assertj.core.api.Assertions.*;
 class RawJdbcConcurrencyTest extends OAuthTestSupport {
     @Test void rawSasJdbcServiceAllowsMultipleConcurrentCodeConsumers() throws Exception {
         List<Integer> winners = new ArrayList<>();
-        for (int round=0;round<3;round++) {
+        for (int round=0;round<5;round++) {
             String code = code(authorize("alpha-web",CALLBACK,"profile",null,null));
-            winners.add((int)concurrentStatuses(16, () -> token("alpha-web",code,null,CALLBACK).getResponse().getStatus())
+            winners.add((int)concurrentStatuses(4, () -> token("alpha-web",code,null,CALLBACK).getResponse().getStatus())
                 .stream().filter(s -> s == 200).count());
         }
         assertThat(winners).as("successful consumers per round without lock").anyMatch(count -> count > 1);

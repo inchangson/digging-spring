@@ -16,7 +16,7 @@ flowchart TD
     D -->|동시 1회 소비/DB 부하| DB[(DB 원자성·운영 설계)]
 ```
 
-특히 SAS JDBC 1.5.8은 동시 요청에서 같은 authorization code 또는 refresh token의 read-then-save 경쟁을 막지 못했다. 16개 동시 요청 중 다수가 성공하는 회차를 재현했고, grant 값 기반 PostgreSQL transaction advisory lock을 같은 Spring transaction에 묶어 회차별 정확히 한 건만 성공하도록 고정했다. 이는 SAS를 쓰더라도 사라지지 않는 보안 경계다.
+특히 SAS JDBC 1.5.8은 동시 요청에서 같은 authorization code 또는 refresh token의 read-then-save 경쟁을 막지 못했다. raw 조건은 4개 동시 요청의 5회 시도 안에서 복수 성공을 재현했고, grant 값 기반 PostgreSQL transaction advisory lock을 같은 Spring transaction에 묶은 16-way 반복에서는 회차별 정확히 한 건만 성공하도록 고정했다. 이는 SAS를 쓰더라도 사라지지 않는 보안 경계다.
 
 ## 2. 사실·역할·성과 증거표
 
@@ -28,7 +28,7 @@ flowchart TD
 | Role | C | 원 프로젝트의 본인 의사결정·리딩 범위는 사용자 확인 필요. demo 작성·실행 사실과 구분 |
 | Alternatives | A/B | 자체 구현, SAS 공개 extension, issuer별 composite, Keycloak 계열 제품을 비교. 당시 실제 검토 여부는 C |
 | Action | A | 실제 SAS dependency, JDBC services, 동적 repository/validator/converter/provider, login handoff, snapshot wrapper, advisory lock 구현 |
-| Verification | A | 44개 test method, PostgreSQL 통합 테스트, 16-way 반복 경합, 2,000건×2 부하 측정 |
+| Verification | A | 44개 test method(52회 실행), PostgreSQL 통합 테스트, 4-way raw/16-way 완화 경합, 2,000건×2 부하 측정 |
 | Result | A | 표준 기능/확장 경계 분류, raw JDBC race 재현과 완화, 정책 SQL 6,000→13회 확인 |
 | Metric | A | DB profile과 test source/실행 결과. 운영 지표가 아님 |
 | Trade-off | A | 정책 cache 지연, SAS Jackson allowlist, provider 교체, DB 종속 lock, UI/verification 외부화 |
@@ -86,7 +86,7 @@ bo-auth의 우선 증거 commit에는 `c9de385`(app binding), `7fed560`(OAuth se
 - 문제/위험: SAS JDBC 사용만으로 one-time grant 동시 소비가 보장된다고 가정할 위험
 - 내가 한 판단과 행동: 16-way 동시 code/refresh 요청을 반복해 raw race를 재현하고, 같은 DB transaction의 grant-key advisory lock 적용
 - 확인된 결과: 완화 조건에서 매 회 정확히 1건만 200, 나머지는 400
-- 검증 방법 또는 수치: `RawJdbcConcurrencyTest`, `ConcurrencyTest` 각 5회 반복 경계
+- 검증 방법 또는 수치: raw 4-way 5회 안에 복수 성공, 완화 16-way code/refresh 각 5회 반복
 - 증거 등급과 근거 경로: A — `39fc1f7`
 - 아직 확인할 질문: 원 구현에서 동일 경합을 어떤 저장소 조건으로 검증했는가
 - 이력서 적합도: 상
@@ -144,7 +144,7 @@ bo-auth의 우선 증거 commit에는 `c9de385`(app binding), `7fed560`(OAuth se
 ## 9. 이력서 bullet 후보와 교체 판단
 
 - SAS 1.5.8·PostgreSQL 독립 실험으로 Authorization Code/PKCE·OIDC·refresh/revoke의 기본 적용 범위와 고객별 정책 확장 경계를 44개 시나리오로 검증
-- 동일 authorization code/refresh token의 16-way 동시 소비에서 SAS JDBC read-then-save 경쟁을 재현하고 transaction advisory lock으로 단일 성공 상태 전이를 고정
+- 동일 authorization code의 4-way raw 경쟁을 재현하고, code/refresh의 16-way 동시 소비를 transaction advisory lock으로 단일 성공 상태 전이에 고정
 - authorize 시점 tenant/service 정책을 authorization snapshot으로 결합하고 token 전 client 비활성화를 재검증해 live 설정 변경의 identity drift를 차단
 - 2,000건·동시성 32 DB profile에서 정책 cache가 SQL 조회를 6,000→13회 줄임을 확인하고, latency 개선은 입증되지 않았음을 분리 보고
 
@@ -173,4 +173,3 @@ bo-auth의 우선 증거 commit에는 `c9de385`(app binding), `7fed560`(OAuth se
 | `39fc1f7` | JDBC 동시 소비 race와 DB lock |
 | `56a67bd` | policy snapshot과 중간 disable |
 | `a1a4f61`, `d2996e4` | 재현 가능한 DB load harness와 HTTP validity gate |
-

@@ -50,11 +50,10 @@ sequenceDiagram
 REQUESTS=5000 CONCURRENCY=64 ./scripts/run-load-profile.sh
 ```
 
-원시 결과는 `target/load-profile`에 생성된다. 스크립트는 단일 정상 요청과 non-2xx 여부를 gate로 검사한다.
+원시 결과는 `target/load-profile`에 생성된다. 스크립트는 단일 정상 요청과 non-2xx 여부를 gate로 검사하고, row 수를 기록한 뒤 생성한 authorization row를 정리한다.
 
 - localhost 단일 JVM·단일 DB이며 네트워크, TLS, 실제 키 관리, 운영 관측 비용은 없다.
 - 한 번의 off→on 순서 측정이라 통계적 유의성이나 회귀 결론을 제공하지 않는다.
 - buffer가 이미 warm해 disk read가 0이었다.
 - client-credentials는 로그인 UI와 authorization endpoint 부하를 포함하지 않는다.
 - 더 큰 부하에서는 반복 실행, 순서 randomization, CPU/GC/JFR, pool acquire time, DB WAL·lock·I/O를 추가해야 한다.
-

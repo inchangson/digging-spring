@@ -90,5 +90,7 @@ run_case() {
 
 run_case uncached false
 run_case cached true
+docker compose exec -T db psql -U sas_demo -d sas_demo -v ON_ERROR_STOP=1 \
+  -c "truncate table oauth2_authorization" >/dev/null
 
 echo "Raw results: $TARGET_DIR"
