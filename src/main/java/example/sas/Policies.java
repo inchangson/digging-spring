@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class Policies {
     public record Policy(String client, String tenant, String service, String redirectMode, String scopeMode,
-        String pkceMode, String theme, String icon, boolean otp, boolean captcha, boolean enabled, long version) {}
+        String pkceMode, String theme, String icon, boolean otp, boolean captcha, boolean enabled,
+        int accessTtlSeconds, boolean refreshEnabled, long version) {}
     private record Cached(Policy value, long deadline) {}
     private final JdbcTemplate jdbc;
     private final ConcurrentHashMap<String, Cached> cache = new ConcurrentHashMap<>();
@@ -24,7 +25,9 @@ public class Policies {
             icon text not null default '/assets/alpha.svg', otp boolean not null default false,
             captcha boolean not null default false, enabled boolean not null default true, version bigint not null default 1)
             """);
-        for (String id : new String[]{"alpha-web", "alpha-mobile", "beta-web", "poc-web"}) {
+        jdbc.execute("alter table demo_policy add column if not exists access_ttl_seconds integer not null default 300");
+        jdbc.execute("alter table demo_policy add column if not exists refresh_enabled boolean not null default true");
+        for (String id : new String[]{"alpha-web", "alpha-mobile", "beta-web", "poc-web", "load-client"}) {
             jdbc.update("insert into demo_policy(client_id,tenant,service) values (?,?,?) on conflict do nothing",
                 id, id.startsWith("beta") ? "beta" : "alpha", id.endsWith("mobile") ? "mobile" : "web");
         }
@@ -36,7 +39,8 @@ public class Policies {
         Policy policy = jdbc.queryForObject("select * from demo_policy where client_id=?", (rs, row) -> new Policy(
             rs.getString("client_id"), rs.getString("tenant"), rs.getString("service"), rs.getString("redirect_mode"),
             rs.getString("scope_mode"), rs.getString("pkce_mode"), rs.getString("theme"), rs.getString("icon"),
-            rs.getBoolean("otp"), rs.getBoolean("captcha"), rs.getBoolean("enabled"), rs.getLong("version")), id);
+            rs.getBoolean("otp"), rs.getBoolean("captcha"), rs.getBoolean("enabled"),
+            rs.getInt("access_ttl_seconds"), rs.getBoolean("refresh_enabled"), rs.getLong("version")), id);
         if (cached) cache.put(id, new Cached(policy, System.nanoTime() + Duration.ofSeconds(2).toNanos()));
         return policy;
     }

@@ -21,6 +21,8 @@ import org.springframework.security.oauth2.server.authorization.*;
 import org.springframework.security.oauth2.server.authorization.client.*;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.*;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -37,20 +39,22 @@ public class SasConfiguration {
         }
         jdbc.execute("CREATE EXTENSION IF NOT EXISTS pg_stat_statements");
         JdbcRegisteredClientRepository repo = new JdbcRegisteredClientRepository(jdbc);
-        for (String id : new String[]{"alpha-web", "alpha-mobile", "beta-web", "poc-web"}) {
-            if (repo.findByClientId(id) == null) repo.save(client(id, id.endsWith("mobile")));
+        for (String id : new String[]{"alpha-web", "alpha-mobile", "beta-web", "poc-web", "load-client"}) {
+            repo.save(client(id, id.endsWith("mobile")));
         }
         return repo;
     }
     static RegisteredClient client(String id, boolean publicClient) {
-        return RegisteredClient.withId(id).clientId(id).clientSecret(publicClient ? null : "{noop}" + id + "-secret")
+        var builder = RegisteredClient.withId(id).clientId(id).clientSecret(publicClient ? null : "{noop}" + id + "-secret")
             .clientAuthenticationMethod(publicClient ? ClientAuthenticationMethod.NONE : ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("https://client.example/callback").scope("profile").scope("email")
+            .redirectUri("https://client.example/callback").scope("openid").scope("profile").scope("email")
             .clientSettings(ClientSettings.builder().requireProofKey(publicClient).requireAuthorizationConsent(false).build())
             .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(5))
-                .refreshTokenTimeToLive(Duration.ofMinutes(30)).reuseRefreshTokens(false).build()).build();
+                .refreshTokenTimeToLive(Duration.ofMinutes(30)).reuseRefreshTokens(false).build());
+        if (id.equals("load-client")) builder.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
+        return builder.build();
     }
     @Bean OAuth2AuthorizationService authorizations(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients) {
         return new JdbcOAuth2AuthorizationService(jdbc, clients);
@@ -62,7 +66,7 @@ public class SasConfiguration {
         RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations, LoginExperience login) throws Exception {
         var sas = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(sas.getEndpointsMatcher())
-            .with(sas, config -> config.registeredClientRepository(effectiveClients)
+            .with(sas, config -> config.registeredClientRepository(effectiveClients).oidc(Customizer.withDefaults())
                 .clientAuthentication(client -> client.authenticationConverter(PkceCompatibility.publicOffConverter(policies))
                     .authenticationProvider(PkceCompatibility.publicOffProvider(policies, effectiveClients, authorizations)))
                 .authorizationEndpoint(endpoint -> endpoint
@@ -98,5 +102,13 @@ public class SasConfiguration {
     }
     @Bean AuthorizationServerSettings settings() {
         return AuthorizationServerSettings.builder().issuer("http://localhost:9099").build();
+    }
+    @Bean OAuth2TokenCustomizer<JwtEncodingContext> tenantClaims(Policies policies) {
+        return context -> {
+            if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) return;
+            var policy = policies.get(context.getRegisteredClient().getClientId());
+            context.getClaims().claim("tenant", policy.tenant()).claim("service", policy.service());
+            if (context.getAuthorizedScopes().contains("profile")) context.getClaims().claim("profile_name", "Demo User");
+        };
     }
 }

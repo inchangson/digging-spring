@@ -25,9 +25,15 @@ public class PkceCompatibility {
             public RegisteredClient findByClientId(String id) {
                 RegisteredClient client = base.findByClientId(id);
                 if (client == null) return null;
-                if (policies.get(id).pkceMode().equals("off")) return RegisteredClient.from(client)
-                    .clientSettings(ClientSettings.withSettings(client.getClientSettings().getSettings()).requireProofKey(false).build()).build();
-                return client;
+                var policy = policies.get(id);
+                var builder = RegisteredClient.from(client)
+                    .tokenSettings(org.springframework.security.oauth2.server.authorization.settings.TokenSettings
+                        .withSettings(client.getTokenSettings().getSettings())
+                        .accessTokenTimeToLive(java.time.Duration.ofSeconds(policy.accessTtlSeconds())).build());
+                if (!policy.refreshEnabled()) builder.authorizationGrantTypes(types -> types.remove(AuthorizationGrantType.REFRESH_TOKEN));
+                if (policy.pkceMode().equals("off")) builder.clientSettings(
+                    ClientSettings.withSettings(client.getClientSettings().getSettings()).requireProofKey(false).build());
+                return builder.build();
             }
         };
     }
