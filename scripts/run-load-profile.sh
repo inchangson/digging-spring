@@ -69,7 +69,7 @@ run_case() {
   local ab_pid="$!"
   while kill -0 "$ab_pid" 2>/dev/null; do
     docker compose exec -T db psql -U sas_demo -d sas_demo -At -F $'\t' -c \
-      "select clock_timestamp(),count(*) filter(where state='active'),count(*) filter(where wait_event_type is not null) from pg_stat_activity where datname='sas_demo'" \
+      "select clock_timestamp(),count(*) filter(where state='active'),count(*) filter(where state='active' and wait_event_type is not null) from pg_stat_activity where datname='sas_demo'" \
       >>"$TARGET_DIR/$name-activity.tsv"
     sleep 0.10
   done
