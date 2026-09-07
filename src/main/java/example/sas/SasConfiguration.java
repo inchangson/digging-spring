@@ -58,12 +58,20 @@ public class SasConfiguration {
     @Bean OAuth2AuthorizationConsentService consents(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients) {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
     }
-    @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http) throws Exception {
+    @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http, PolicyValidator validator) throws Exception {
         var sas = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(sas.getEndpointsMatcher())
-            .with(sas, Customizer.withDefaults())
+            .with(sas, config -> config.authorizationEndpoint(endpoint -> endpoint.authenticationProviders(providers ->
+                providers.forEach(provider -> {
+                    if (provider instanceof org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationProvider p)
+                        p.setAuthenticationValidator(validator);
+                }))))
             .authorizeHttpRequests(a -> a.anyRequest().authenticated())
-            .exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
+            .exceptionHandling(e -> e.authenticationEntryPoint((request, response, failure) -> {
+                if (request.getRequestURI().equals("/oauth2/authorize"))
+                    new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, failure);
+                else response.sendError(401);
+            }));
         return http.build();
     }
     @Bean @Order(2) SecurityFilterChain loginChain(HttpSecurity http) throws Exception {
