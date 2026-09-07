@@ -7,8 +7,10 @@ cd "$ROOT_DIR"
 REQUESTS="${REQUESTS:-2000}"
 CONCURRENCY="${CONCURRENCY:-32}"
 TARGET_DIR="$ROOT_DIR/target/load-profile"
+FORM_FILE="$TARGET_DIR/client-credentials.form"
 APP_PID=""
 mkdir -p "$TARGET_DIR"
+tr -d '\r\n' <scripts/client-credentials.form >"$FORM_FILE"
 
 cleanup() {
   if [[ -n "$APP_PID" ]] && kill -0 "$APP_PID" 2>/dev/null; then
@@ -51,8 +53,10 @@ run_case() {
   local cache="$2"
   start_app "$name" "$cache"
 
+  curl -fsS -u load-client:load-client-secret -H 'Content-Type: application/x-www-form-urlencoded' \
+    --data-binary "@$FORM_FILE" http://127.0.0.1:9099/oauth2/token >/dev/null
   /usr/sbin/ab -q -n 100 -c 8 -A load-client:load-client-secret \
-    -p scripts/client-credentials.form -T application/x-www-form-urlencoded \
+    -p "$FORM_FILE" -T application/x-www-form-urlencoded \
     http://127.0.0.1:9099/oauth2/token >/dev/null
   docker compose exec -T db psql -U sas_demo -d sas_demo -v ON_ERROR_STOP=1 \
     -c "truncate table oauth2_authorization" \
@@ -60,7 +64,7 @@ run_case() {
 
   : >"$TARGET_DIR/$name-activity.tsv"
   /usr/sbin/ab -q -n "$REQUESTS" -c "$CONCURRENCY" -A load-client:load-client-secret \
-    -p scripts/client-credentials.form -T application/x-www-form-urlencoded \
+    -p "$FORM_FILE" -T application/x-www-form-urlencoded \
     http://127.0.0.1:9099/oauth2/token >"$TARGET_DIR/$name-ab.txt" &
   local ab_pid="$!"
   while kill -0 "$ab_pid" 2>/dev/null; do
@@ -70,6 +74,12 @@ run_case() {
     sleep 0.10
   done
   wait "$ab_pid"
+  local non_2xx
+  non_2xx="$(awk '/Non-2xx responses:/ {print $3}' "$TARGET_DIR/$name-ab.txt")"
+  if [[ -n "$non_2xx" ]] && [[ "$non_2xx" != "0" ]]; then
+    echo "$name produced $non_2xx non-2xx responses" >&2
+    exit 1
+  fi
 
   docker compose exec -T db psql -U sas_demo -d sas_demo -P pager=off \
     -f /dev/stdin <scripts/profile-statements.sql >"$TARGET_DIR/$name-pg-statements.txt"
