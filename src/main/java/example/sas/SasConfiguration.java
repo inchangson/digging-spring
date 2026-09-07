@@ -63,7 +63,8 @@ public class SasConfiguration {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
     }
     @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http, PolicyValidator validator, Policies policies,
-        RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations, LoginExperience login) throws Exception {
+        RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations, LoginExperience login,
+        TokenGrantLockFilter tokenGrantLock) throws Exception {
         var sas = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(sas.getEndpointsMatcher())
             .with(sas, config -> config.registeredClientRepository(effectiveClients).oidc(Customizer.withDefaults())
@@ -80,7 +81,9 @@ public class SasConfiguration {
                         p.setAuthenticationValidator(validator);
                 }))))
             .authorizeHttpRequests(a -> a.anyRequest().authenticated())
-            .exceptionHandling(e -> e.authenticationEntryPoint(login.entryPoint()));
+            .exceptionHandling(e -> e.authenticationEntryPoint(login.entryPoint()))
+            .addFilterAfter(tokenGrantLock,
+                org.springframework.security.web.context.SecurityContextHolderFilter.class);
         return http.build();
     }
     @Bean @Order(2) SecurityFilterChain loginChain(HttpSecurity http, LoginExperience login) throws Exception {
