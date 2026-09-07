@@ -26,6 +26,7 @@ public class PkceCompatibility {
                 RegisteredClient client = base.findByClientId(id);
                 if (client == null) return null;
                 var policy = policies.get(id);
+                if (!policy.enabled()) return null;
                 var builder = RegisteredClient.from(client)
                     .tokenSettings(org.springframework.security.oauth2.server.authorization.settings.TokenSettings
                         .withSettings(client.getTokenSettings().getSettings())

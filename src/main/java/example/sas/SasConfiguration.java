@@ -5,6 +5,7 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import com.nimbusds.jose.jwk.*;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -56,8 +57,9 @@ public class SasConfiguration {
         if (id.equals("load-client")) builder.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
         return builder.build();
     }
-    @Bean OAuth2AuthorizationService authorizations(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients) {
-        return new JdbcOAuth2AuthorizationService(jdbc, clients);
+    @Bean OAuth2AuthorizationService authorizations(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients,
+        Policies policies) {
+        return new PolicySnapshotAuthorizationService(new JdbcOAuth2AuthorizationService(jdbc, clients), clients, policies);
     }
     @Bean OAuth2AuthorizationConsentService consents(JdbcTemplate jdbc, JdbcRegisteredClientRepository clients) {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
@@ -109,8 +111,13 @@ public class SasConfiguration {
     @Bean OAuth2TokenCustomizer<JwtEncodingContext> tenantClaims(Policies policies) {
         return context -> {
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) return;
-            var policy = policies.get(context.getRegisteredClient().getClientId());
-            context.getClaims().claim("tenant", policy.tenant()).claim("service", policy.service());
+            Map<String,Object> snapshot = context.getAuthorization() == null ? null
+                : context.getAuthorization().getAttribute(PolicySnapshotAuthorizationService.ATTRIBUTE);
+            if (snapshot == null) {
+                var policy = policies.get(context.getRegisteredClient().getClientId());
+                snapshot = Map.of("tenant", policy.tenant(), "service", policy.service());
+            }
+            context.getClaims().claim("tenant", snapshot.get("tenant")).claim("service", snapshot.get("service"));
             if (context.getAuthorizedScopes().contains("profile")) context.getClaims().claim("profile_name", "Demo User");
         };
     }
