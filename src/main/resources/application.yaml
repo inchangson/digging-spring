@@ -1,0 +1,13 @@
+server:
+  address: 127.0.0.1
+  port: 9099
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:55439/sas_demo
+    username: sas_demo
+    password: local-demo-only
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+  thymeleaf:
+    cache: false
