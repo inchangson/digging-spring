@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"><head><title>Compact customer sign in</title></head>
+<body style="background:#eef4ff"><aside>Compact experience</aside><section>
+<img width="32" height="32" th:src="${policy.icon}" alt="Customer icon"><h2 th:text="${policy.tenant}">Customer</h2>
+<form th:action="@{/login}" method="post"><input type="hidden" name="flow" th:value="${flow}">
+<label>Account<input name="username"></label><label>Password<input name="password" type="password"></label>
+<input th:if="${policy.otp}" name="otp" aria-label="Demo OTP"><input th:if="${policy.captcha}" name="captcha" aria-label="Demo CAPTCHA">
+<button>Continue</button></form></section></body></html>

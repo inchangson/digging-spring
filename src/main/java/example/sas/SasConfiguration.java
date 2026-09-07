@@ -59,7 +59,7 @@ public class SasConfiguration {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
     }
     @Bean @Order(1) SecurityFilterChain authorizationChain(HttpSecurity http, PolicyValidator validator, Policies policies,
-        RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations) throws Exception {
+        RegisteredClientRepository effectiveClients, OAuth2AuthorizationService authorizations, LoginExperience login) throws Exception {
         var sas = OAuth2AuthorizationServerConfigurer.authorizationServer();
         http.securityMatcher(sas.getEndpointsMatcher())
             .with(sas, config -> config.registeredClientRepository(effectiveClients)
@@ -76,16 +76,13 @@ public class SasConfiguration {
                         p.setAuthenticationValidator(validator);
                 }))))
             .authorizeHttpRequests(a -> a.anyRequest().authenticated())
-            .exceptionHandling(e -> e.authenticationEntryPoint((request, response, failure) -> {
-                if (request.getRequestURI().equals("/oauth2/authorize"))
-                    new LoginUrlAuthenticationEntryPoint("/login").commence(request, response, failure);
-                else response.sendError(401);
-            }));
+            .exceptionHandling(e -> e.authenticationEntryPoint(login.entryPoint()));
         return http.build();
     }
-    @Bean @Order(2) SecurityFilterChain loginChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(a -> a.requestMatchers("/assets/**").permitAll().anyRequest().authenticated())
-            .formLogin(Customizer.withDefaults());
+    @Bean @Order(2) SecurityFilterChain loginChain(HttpSecurity http, LoginExperience login) throws Exception {
+        http.authorizeHttpRequests(a -> a.requestMatchers("/assets/**", "/login").permitAll().anyRequest().authenticated())
+            .formLogin(form -> form.loginPage("/login").successHandler(login::success).permitAll())
+            .addFilterBefore(login.verificationFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
     @Bean UserDetailsService users() {
