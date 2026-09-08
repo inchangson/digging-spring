@@ -28,7 +28,7 @@ flowchart TD
 | Role | C | 원 프로젝트의 본인 의사결정·리딩 범위는 사용자 확인 필요. demo 작성·실행 사실과 구분 |
 | Alternatives | A/B | 자체 구현, SAS 공개 extension, issuer별 composite, Keycloak 계열 제품을 비교. 당시 실제 검토 여부는 C |
 | Action | A | 실제 SAS dependency, JDBC services, 동적 repository/validator/converter/provider, login handoff, snapshot wrapper, advisory lock 구현 |
-| Verification | A | 44개 test method(52회 실행), PostgreSQL 통합 테스트, 4-way raw/16-way 완화 경합, 2,000건×2 부하 측정 |
+| Verification | A | 46개 test method(54회 실행), PostgreSQL 통합 테스트, 4-way raw/16-way 완화 경합, 2,000건×2 부하 측정 |
 | Result | A | 표준 기능/확장 경계 분류, raw JDBC race 재현과 완화, 정책 SQL 6,000→13회 확인 |
 | Metric | A | DB profile과 test source/실행 결과. 운영 지표가 아님 |
 | Trade-off | A | 정책 cache 지연, SAS Jackson allowlist, provider 교체, DB 종속 lock, UI/verification 외부화 |
@@ -122,7 +122,7 @@ bo-auth의 우선 증거 commit에는 `c9de385`(app binding), `7fed560`(OAuth se
 
 ## 6. Demo 가설과 실행 결과
 
-가설은 “SAS가 protocol core는 대체하지만 동적 고객 정책의 모든 안전성을 자동 제공하지는 않는다”이다. 위치는 `/Users/son-inchang/Work/demo/sas-demo`; 실행법은 README에 있다. 44개 test method와 실제 PostgreSQL로 정상·실패·경합을 검증했다. OTP/CAPTCHA는 외부 통신 없는 test double이다.
+가설은 “SAS가 protocol core는 대체하지만 동적 고객 정책의 모든 안전성을 자동 제공하지는 않는다”이다. 위치는 `/Users/son-inchang/Work/demo/sas-demo`; 실행법은 README에 있다. 46개 test method와 실제 PostgreSQL로 정상·실패·경합을 검증했다. OTP/CAPTCHA는 외부 통신 없는 test double이다.
 
 ## 7. STAR 초안
 
@@ -143,7 +143,7 @@ bo-auth의 우선 증거 commit에는 `c9de385`(app binding), `7fed560`(OAuth se
 
 ## 9. 이력서 bullet 후보와 교체 판단
 
-- SAS 1.5.8·PostgreSQL 독립 실험으로 Authorization Code/PKCE·OIDC·refresh/revoke의 기본 적용 범위와 고객별 정책 확장 경계를 44개 시나리오로 검증
+- SAS 1.5.8·PostgreSQL 독립 실험으로 Authorization Code/PKCE·OIDC·refresh/revoke의 기본 적용 범위와 고객별 정책 확장 경계를 46개 시나리오로 검증
 - 동일 authorization code의 4-way raw 경쟁을 재현하고, code/refresh의 16-way 동시 소비를 transaction advisory lock으로 단일 성공 상태 전이에 고정
 - authorize 시점 tenant/service 정책을 authorization snapshot으로 결합하고 token 전 client 비활성화를 재검증해 live 설정 변경의 identity drift를 차단
 - 2,000건·동시성 32 DB profile에서 정책 cache가 SQL 조회를 6,000→13회 줄임을 확인하고, latency 개선은 입증되지 않았음을 분리 보고

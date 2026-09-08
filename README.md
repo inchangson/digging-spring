@@ -35,10 +35,11 @@ mvn test
 
 - [전체 유스케이스와 SAS 경계](docs/verification-report.md)
 - [PostgreSQL 부하 프로파일](docs/db-load-profile.md)
+- [비기능 검증 결과](docs/non-functional-verification.md)
+- [bo-auth와 sas-demo 비교 대조표](docs/bo-auth-vs-sas-demo.md)
 - 원시 부하 결과: `target/load-profile/` (재실행 산출물, Git 제외)
 
 공식 문서상 SAS configurer는 client authentication, authorization, token, revocation 등 endpoint별 전처리·provider·후처리 확장점을 제공한다. 공식 multitenancy 가이드도 다중 issuer 자체보다 `RegisteredClientRepository`, `OAuth2AuthorizationService`, consent service, `JWKSource`를 tenant별 composite로 만드는 패턴을 요구한다.
 
 - [SAS 1.5.8 configuration model](https://docs.spring.io/spring-authorization-server/reference/configuration-model.html)
 - [SAS multitenancy guide](https://docs.spring.io/spring-authorization-server/reference/guides/how-to-multitenancy.html)
-
