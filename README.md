@@ -33,6 +33,7 @@ mvn test
 
 ## 결과 읽기
 
+- [산출물 전체 경로 안내](docs/README.md)
 - [전체 유스케이스와 SAS 경계](docs/verification-report.md)
 - [PostgreSQL 부하 프로파일](docs/db-load-profile.md)
 - [비기능 검증 결과](docs/non-functional-verification.md)
