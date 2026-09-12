@@ -1,0 +1,35 @@
+plugins {
+    id 'org.springframework.boot' version '3.5.15' apply false
+}
+
+allprojects {
+    group = 'study.spring'
+    version = '1.0.0'
+}
+
+subprojects {
+    if (project.path.startsWith(':topics:')) {
+        apply plugin: 'java'
+
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(17)
+            }
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+            options.compilerArgs.add('-parameters')
+        }
+
+        dependencies {
+            implementation platform('org.springframework.boot:spring-boot-dependencies:3.5.15')
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+
+        tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+        }
+    }
+}

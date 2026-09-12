@@ -7,8 +7,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 : "${BO_AUTH_ENV_FILE:?Set BO_AUTH_ENV_FILE to the local environment file}"
 : "${BO_AUTH_READY_URL:?Set BO_AUTH_READY_URL to a non-sensitive readiness URL}"
 SAMPLE_DELAY_SECONDS="${SAMPLE_DELAY_SECONDS:-20}"
-RESULT_DIR="$ROOT_DIR/target/nonfunctional"
-SAS_JAR="$ROOT_DIR/target/sas-demo-1.0.0.jar"
+RESULT_DIR="$ROOT_DIR/build/nonfunctional"
+SAS_JAR="$ROOT_DIR/build/libs/sas-demo-1.0.0.jar"
 BO_JAR="$BO_AUTH_JAR"
 SAS_PID=""
 BO_PID=""
@@ -56,7 +56,7 @@ measure() {
 
 cd "$ROOT_DIR"
 docker compose up -d --wait
-mvn -B -q -DskipTests package
+"$ROOT_DIR/../../gradlew" -p "$ROOT_DIR/../.." :topics:authorization-server:bootJar
 test -f "$BO_JAR"
 test -f "$BO_AUTH_ENV_FILE"
 

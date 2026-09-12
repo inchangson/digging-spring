@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-RESULT_DIR="$ROOT_DIR/target/nonfunctional"
+RESULT_DIR="$ROOT_DIR/build/nonfunctional"
 FORM_FILE="$RESULT_DIR/client-credentials.form"
 APP_PID=""
 mkdir -p "$RESULT_DIR"
@@ -25,8 +25,8 @@ token_status() {
 
 cd "$ROOT_DIR"
 docker compose up -d --wait
-mvn -B -q -DskipTests package
-java -jar target/sas-demo-1.0.0.jar --spring.datasource.hikari.connection-timeout=2000 \
+"$ROOT_DIR/../../gradlew" -p "$ROOT_DIR/../.." :topics:authorization-server:bootJar
+java -jar build/libs/sas-demo-1.0.0.jar --spring.datasource.hikari.connection-timeout=2000 \
   >"$RESULT_DIR/db-resilience-app.log" 2>&1 &
 APP_PID="$!"
 

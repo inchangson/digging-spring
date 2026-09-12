@@ -6,7 +6,7 @@ cd "$ROOT_DIR"
 
 REQUESTS="${REQUESTS:-2000}"
 CONCURRENCY="${CONCURRENCY:-32}"
-TARGET_DIR="$ROOT_DIR/target/load-profile"
+TARGET_DIR="$ROOT_DIR/build/load-profile"
 FORM_FILE="$TARGET_DIR/client-credentials.form"
 APP_PID=""
 mkdir -p "$TARGET_DIR"
@@ -21,12 +21,12 @@ cleanup() {
 trap cleanup EXIT
 
 docker compose up -d --wait
-mvn -B -q -DskipTests package
+"$ROOT_DIR/../../gradlew" -p "$ROOT_DIR/../.." :topics:authorization-server:bootJar
 
 start_app() {
   local name="$1"
   local cache="$2"
-  java -jar target/sas-demo-1.0.0.jar --demo.policy-cache="$cache" >"$TARGET_DIR/$name-app.log" 2>&1 &
+  java -jar build/libs/sas-demo-1.0.0.jar --demo.policy-cache="$cache" >"$TARGET_DIR/$name-app.log" 2>&1 &
   APP_PID="$!"
   for _ in {1..120}; do
     if curl -fsS http://127.0.0.1:9099/.well-known/oauth-authorization-server >/dev/null; then

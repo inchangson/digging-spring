@@ -20,7 +20,7 @@ flowchart TD
     ENV --> SOAK[soak GC and key rotation]
 ```
 
-`자동 검증`은 `mvn test`에 포함되고, `재현 스크립트`는 Docker와 로컬 프로세스를 실제로 사용한다. 마지막 영역은 이번 결과에서 완료로 표시하지 않는다.
+`자동 검증`은 `../../gradlew -p ../.. :topics:authorization-server:test`에 포함되고, `재현 스크립트`는 Docker와 로컬 프로세스를 실제로 사용한다. 마지막 영역은 이번 결과에서 완료로 표시하지 않는다.
 
 ## 결과 요약
 
@@ -82,8 +82,9 @@ sequenceDiagram
 ## 재현 명령
 
 ```bash
+# topics/authorization-server 디렉터리에서 실행
 docker compose up -d --wait
-mvn test
+../../gradlew -p ../.. :topics:authorization-server:test
 ./scripts/run-load-profile.sh
 ./scripts/run-db-resilience-profile.sh
 BO_AUTH_DIR=/path/to/reference \
@@ -93,7 +94,7 @@ BO_AUTH_READY_URL=http://127.0.0.1:port/readiness \
 ./scripts/run-runtime-footprint.sh
 ```
 
-raw 결과는 `target/load-profile`과 `target/nonfunctional`에 생성되며 Git에 포함하지 않는다. DB resilience 스크립트는 컨테이너를 삭제하지 않고 마지막에 다시 시작한다. 비교 서비스의 비밀값과 내부 경로는 결과 문서에 기록하지 않는다.
+raw 결과는 `build/load-profile`과 `build/nonfunctional`에 생성되며 Git에 포함하지 않는다. DB resilience 스크립트는 컨테이너를 삭제하지 않고 마지막에 다시 시작한다. 비교 서비스의 비밀값과 내부 경로는 결과 문서에 기록하지 않는다.
 
 ## 다음 검증 gate
 

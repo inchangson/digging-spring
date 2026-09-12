@@ -14,10 +14,10 @@ flowchart TD
     N --> D[database load profile]
     V --> T[JUnit integration and concurrency tests]
     N --> S[load resilience footprint scripts]
-    S --> R[target raw results Git excluded]
+    S --> R[build raw results Git excluded]
 ```
 
-`docs`는 판단과 측정 결과, `src/test`는 자동 검증, `scripts`는 실제 프로세스·PostgreSQL 재현, `target`은 다시 생성 가능한 원시 결과를 담당한다.
+`docs`는 판단과 측정 결과, `src/test`는 자동 검증, `scripts`는 실제 프로세스·PostgreSQL 재현, `build`은 다시 생성 가능한 원시 결과를 담당한다.
 
 ## 문서
 
@@ -49,17 +49,18 @@ flowchart TD
 전체 46개 test method는 다음 명령으로 실행한다. 반복 테스트를 포함한 실행 수는 54회다.
 
 ```bash
+# topics/authorization-server 디렉터리에서 실행
 docker compose up -d --wait
-mvn test
+../../gradlew -p ../.. :topics:authorization-server:test
 ```
 
 ## 재현 스크립트
 
 | 목적 | 경로 | raw 결과 경로 |
 |---|---|---|
-| HTTP·PostgreSQL 부하 | `scripts/run-load-profile.sh` | `target/load-profile/` |
-| DB 장애·자동 복구 | `scripts/run-db-resilience-profile.sh` | `target/nonfunctional/db-resilience.tsv` |
-| 두 서비스 runtime footprint | `scripts/run-runtime-footprint.sh` | `target/nonfunctional/runtime-footprint.tsv` |
+| HTTP·PostgreSQL 부하 | `scripts/run-load-profile.sh` | `build/load-profile/` |
+| DB 장애·자동 복구 | `scripts/run-db-resilience-profile.sh` | `build/nonfunctional/db-resilience.tsv` |
+| 두 서비스 runtime footprint | `scripts/run-runtime-footprint.sh` | `build/nonfunctional/runtime-footprint.tsv` |
 | benchmark 요청 본문 | `scripts/client-credentials.form` | 스크립트 입력 |
 | DB statement 집계 | `scripts/profile-statements.sql` | 스크립트 입력 |
 

@@ -46,11 +46,12 @@ sequenceDiagram
 ## 재현과 한계
 
 ```bash
+# topics/authorization-server 디렉터리에서 실행
 ./scripts/run-load-profile.sh
 REQUESTS=5000 CONCURRENCY=64 ./scripts/run-load-profile.sh
 ```
 
-원시 결과는 `target/load-profile`에 생성된다. 스크립트는 단일 정상 요청과 non-2xx 여부를 gate로 검사하고, row 수를 기록한 뒤 생성한 authorization row를 정리한다.
+원시 결과는 `build/load-profile`에 생성된다. 스크립트는 단일 정상 요청과 non-2xx 여부를 gate로 검사하고, row 수를 기록한 뒤 생성한 authorization row를 정리한다.
 
 - localhost 단일 JVM·단일 DB이며 네트워크, TLS, 실제 키 관리, 운영 관측 비용은 없다.
 - 한 번의 off→on 순서 측정이라 통계적 유의성이나 회귀 결론을 제공하지 않는다.
