@@ -53,7 +53,7 @@ Authorization Server와 동시에 실행하려면 포트를 변경합니다.
 
 ## 원본과 이식 범위
 
-- 원본: [inchangson/filter-interceptor-ex-code](https://github.com/inchangson/filter-interceptor-ex-code)
+- 원본 저장소명: `inchangson/filter-interceptor-ex-code` (이력과 코드를 이 저장소로 이관)
 - 기준 커밋: `6941cbdbc946a6c6c685f2f33c3ab4e61d7b6d78` (`master` 최종 예제)
 - 원본 Java 패키지, 화면, 정적 리소스와 회원·상품 관리 흐름을 유지했습니다.
 - Boot 2.7 / Java 8 설정을 저장소 공통 Boot 3.5 / Java 17 설정으로 통합했습니다.
@@ -66,6 +66,9 @@ Authorization Server와 동시에 실행하려면 포트를 변경합니다.
 원본 `master`의 전체 이력을 squash 없이 subtree 병합으로 가져왔습니다.
 원본 커밋의 해시·작성자·메시지를 유지하고, 이후 별도 커밋에서 `demo/src`를 모듈의 `src`로 옮기고
 공통 빌드 설정과 Boot 3 호환 수정을 적용했습니다.
+코드와 Git 객체는 모두 이 저장소에 저장되어 원본 저장소 삭제 후에도 사용할 수 있습니다.
+외부 remote나 submodule, 지속적인 subtree 동기화 설정은 없습니다.
+가져오기 커밋에 남은 `git-subtree-*` 문구는 이관 기록이며 외부 저장소 연결 설정이 아닙니다.
 원본의 브랜치 끝점은 다음 보관용 태그로 남깁니다.
 
 - `archive/filter-interceptor/master`
@@ -85,11 +88,15 @@ git log archive/filter-interceptor/master -- demo/src/main/java/com/example/demo
 `git log --follow`는 subtree 병합 경계에서 원본 경로까지 자동으로 추적하지 못할 수 있습니다.
 원격에 보관용 태그도 남기려면 브랜치와 함께 위의 세 태그를 명시적으로 push해야 합니다.
 
-구현 과정을 비교하는 원본 브랜치는 다음에서 확인할 수 있습니다. 이 모듈은 최종 예제를 실행합니다.
+```bash
+git push origin main refs/tags/archive/filter-interceptor/master refs/tags/archive/filter-interceptor/feat-filter refs/tags/archive/filter-interceptor/feat-interceptor
+```
 
-| 원본 브랜치 | 학습 내용 |
+구현 과정 비교는 이 저장소에 보존한 태그를 사용합니다. 이 모듈은 최종 예제를 실행합니다.
+
+| 보관용 태그 | 학습 내용 |
 | --- | --- |
-| [feat/filter](https://github.com/inchangson/filter-interceptor-ex-code/tree/feat/filter) | 필터로 로깅·로그인·Referer 검사 구현 |
-| [feat/interceptor](https://github.com/inchangson/filter-interceptor-ex-code/tree/feat/interceptor) | 인터셉터로 로깅·로그인·실행 시간 측정 구현 |
+| `archive/filter-interceptor/feat-filter` | 필터로 로깅·로그인·Referer 검사 구현 |
+| `archive/filter-interceptor/feat-interceptor` | 인터셉터로 로깅·로그인·실행 시간 측정 구현 |
 
 원본 README에 언급된 `compare_same_func` 브랜치는 이식 시점의 원격 브랜치에 없어 링크에서 제외했습니다.

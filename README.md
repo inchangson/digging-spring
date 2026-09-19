@@ -1,4 +1,4 @@
-# Diggin Spring
+# Digging Spring
 
 Spring의 다양한 주제를 독립적인 코드와 테스트로 공부하는 Gradle 멀티 모듈 저장소입니다.
 
