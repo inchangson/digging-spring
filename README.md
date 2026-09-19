@@ -13,6 +13,7 @@ topics/
     scripts/
     compose.yaml
     build.gradle
+  filter-interceptor/     # Servlet Filter, MVC Interceptor, 세션 로그인
 templates/
   topic/                  # 새 학습 주제 템플릿
 notes/                    # 책·강의 메모
@@ -22,7 +23,11 @@ notes/                    # 책·강의 메모
 - 루트 `build.gradle`: 공통 Java toolchain, Spring Boot BOM, JUnit 설정.
 - 모듈 `build.gradle`: 해당 주제에 필요한 의존성과 실행 설정.
 
-현재 학습 내용은 [Authorization Server 학습 가이드](topics/authorization-server/README.md)에서 시작합니다.
+학습 가이드:
+
+- [Authorization Server](topics/authorization-server/README.md): SAS 확장 경계와 OAuth2/OIDC 실험
+- [Filter / Interceptor](topics/filter-interceptor/README.md): 회원·상품 관리 예제로 요청 처리 흐름 비교
+
 추가할 주제 예시: IoC/DI, AOP, MVC, 트랜잭션, JPA, Security, Batch, 이벤트와 캐시.
 
 ## 실행
@@ -39,11 +44,16 @@ docker compose -f topics/authorization-server/compose.yaml up -d --wait
 ./gradlew :topics:authorization-server:test
 ./gradlew :topics:authorization-server:bootRun
 ./gradlew :topics:authorization-server:bootJar
+./gradlew :topics:filter-interceptor:test
+./gradlew :topics:filter-interceptor:bootRun
+./gradlew :topics:filter-interceptor:bootJar
 ```
 
 테스트 보고서는 `topics/authorization-server/build/reports/tests/test/index.html`,
 실행 JAR는 `topics/authorization-server/build/libs/sas-demo-1.0.0.jar`에 생성됩니다.
 부하 실험은 `./topics/authorization-server/scripts/run-load-profile.sh`로 실행합니다.
+Filter / Interceptor 모듈은 DB나 Docker 없이 실행하며, `http://localhost:8080/space`에서 확인합니다.
+두 앱의 기본 포트는 모두 8080이므로 함께 실행할 때는 한쪽의 포트를 변경합니다.
 
 ## 새 주제 추가
 

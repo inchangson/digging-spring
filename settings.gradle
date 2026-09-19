@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = 'diggin-spring'
 
 include 'topics:authorization-server'
+include 'topics:filter-interceptor'

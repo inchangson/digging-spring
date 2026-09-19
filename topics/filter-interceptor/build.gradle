@@ -1,0 +1,16 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor platform('org.springframework.boot:spring-boot-dependencies:3.5.15')
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('bootJar') {
+    archiveFileName = 'filter-interceptor-1.0.0.jar'
+}
